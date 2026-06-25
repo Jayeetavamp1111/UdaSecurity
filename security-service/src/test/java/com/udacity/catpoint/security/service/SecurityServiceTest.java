@@ -51,6 +51,7 @@ class SecurityServiceTest {
     @Test
     void pendingAlarm_allSensorsInactive_noAlarm() {
         when(securityRepository.getAlarmStatus()).thenReturn(AlarmStatus.PENDING_ALARM);
+        when(securityRepository.getSensors()).thenReturn(Set.of());
         sensor.setActive(true);
         securityService.changeSensorActivationStatus(sensor, false);
         verify(securityRepository).setAlarmStatus(AlarmStatus.NO_ALARM);
@@ -138,5 +139,40 @@ class SecurityServiceTest {
         when(imageService.imageContainsCat(any(), anyFloat())).thenReturn(false);
         securityService.processImage(mock(BufferedImage.class));
         verify(securityRepository, never()).setAlarmStatus(any(AlarmStatus.class));
+    }
+
+    @Test
+    void pendingAlarm_oneSensorStillActive_alarmNotCleared() {
+        Sensor sensor2 = new Sensor("window", SensorType.WINDOW);
+        sensor2.setActive(true);
+        sensor.setActive(true);
+        when(securityRepository.getAlarmStatus()).thenReturn(AlarmStatus.PENDING_ALARM);
+        when(securityRepository.getSensors()).thenReturn(Set.of(sensor, sensor2));
+        securityService.changeSensorActivationStatus(sensor, false);
+        verify(securityRepository, never()).setAlarmStatus(AlarmStatus.NO_ALARM);
+    }
+
+    @Test
+    void systemArmedHome_catAlreadyDetected_setAlarm() {
+        when(securityRepository.getSensors()).thenReturn(Set.of());
+        when(imageService.imageContainsCat(any(), anyFloat())).thenReturn(true);
+        when(securityRepository.getArmingStatus()).thenReturn(ArmingStatus.ARMED_HOME);
+        securityService.processImage(mock(BufferedImage.class));
+        securityService.setArmingStatus(ArmingStatus.ARMED_HOME);
+        verify(securityRepository, atLeastOnce()).setAlarmStatus(AlarmStatus.ALARM);
+    }
+
+    @Test
+    void systemArmed_multipleSensorsActive_updatesEachSensorInactive() {
+        Sensor door = new Sensor("door", SensorType.DOOR);
+        Sensor window = new Sensor("window", SensorType.WINDOW);
+        door.setActive(true);
+        window.setActive(true);
+        when(securityRepository.getSensors()).thenReturn(Set.of(door, window));
+        securityService.setArmingStatus(ArmingStatus.ARMED_AWAY);
+        verify(securityRepository).updateSensor(door);
+        verify(securityRepository).updateSensor(window);
+        assertFalse(door.getActive());
+        assertFalse(window.getActive());
     }
 }
