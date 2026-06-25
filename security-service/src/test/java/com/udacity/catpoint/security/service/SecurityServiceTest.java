@@ -90,6 +90,7 @@ class SecurityServiceTest {
 
     @Test
     void imageServiceIdentifiesNoCat_sensorsInactive_noAlarm() {
+        when(securityRepository.getSensors()).thenReturn(Set.of());
         when(imageService.imageContainsCat(any(), anyFloat())).thenReturn(false);
         securityService.processImage(mock(BufferedImage.class));
         verify(securityRepository).setAlarmStatus(AlarmStatus.NO_ALARM);
@@ -116,6 +117,7 @@ class SecurityServiceTest {
         securityService.processImage(mock(BufferedImage.class));
         verify(securityRepository).setAlarmStatus(AlarmStatus.ALARM);
     }
+
     @ParameterizedTest
     @EnumSource(ArmingStatus.class)
     void systemArmed_sensorActivated_pendingAlarm(ArmingStatus armingStatus) {
@@ -127,5 +129,14 @@ class SecurityServiceTest {
         } else {
             verify(securityRepository).setAlarmStatus(AlarmStatus.PENDING_ALARM);
         }
+    }
+
+    @Test
+    void imageServiceIdentifiesNoCat_sensorsActive_alarmUnchanged() {
+        sensor.setActive(true);
+        when(securityRepository.getSensors()).thenReturn(Set.of(sensor));
+        when(imageService.imageContainsCat(any(), anyFloat())).thenReturn(false);
+        securityService.processImage(mock(BufferedImage.class));
+        verify(securityRepository, never()).setAlarmStatus(any(AlarmStatus.class));
     }
 }

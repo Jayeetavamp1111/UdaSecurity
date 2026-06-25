@@ -55,6 +55,7 @@
         <configuration>
           <argLine>
             --add-opens com.udacity.catpoint.security/com.udacity.catpoint.security.service=ALL-UNNAMED
+            -Djava.awt.headless=true
           </argLine>
         </configuration>
       </plugin>

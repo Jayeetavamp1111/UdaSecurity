@@ -21,7 +21,8 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.1.2</version>
         <configuration>
-          <argLine>--add-opens com.udacity.catpoint.security/com.udacity.catpoint.security.service=ALL-UNNAMED</argLine>
+          <argLine>--add-opens com.udacity.catpoint.security/com.udacity.catpoint.security.service=ALL-UNNAMED
+            -Djava.awt.headless=true</argLine>
         </configuration>
       </plugin>
       <plugin>
